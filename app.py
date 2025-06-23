@@ -6,18 +6,23 @@ from sklearn.metrics.pairwise import euclidean_distances
 # ---- Load and prepare your data from a local CSV ----
 @st.cache_data
 def load_data():
-    file_path = "2025-swing-data.csv"  # Replace with your actual filename
+    file_path = "2025-swing-data.csv"  # Replace with your file name if needed
     df = pd.read_csv(file_path)
     df = df.dropna()
-    
-    # Make sure your CSV has "Player Name"
+
+    # Set player name as index
     df.set_index("Player Name", inplace=True)
-    
-    # Use only numeric stat columns
+
+    # Drop 'player_id' and 'year' if they exist
+    df = df.drop(columns=[col for col in ["player_id", "year"] if col in df.columns], errors="ignore")
+
+    # Use only numerical columns for similarity
     features = df.select_dtypes(include=["float64", "int64"])
+
+    # Normalize stats
     scaler = StandardScaler()
     scaled = scaler.fit_transform(features)
-    
+
     return df, features.columns, scaled, df.index.tolist()
 
 # Load data
