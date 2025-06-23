@@ -1,0 +1,67 @@
+import streamlit as st
+import pandas as pd
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics.pairwise import euclidean_distances
+
+# ---- Load and prepare your data from a local CSV ----
+@st.cache_data
+def load_data():
+    file_path = "2025-swing-data.csv"  # Replace with your actual filename
+    df = pd.read_csv(file_path)
+    df = df.dropna()
+    
+    # Make sure your CSV has "Player Name"
+    df.set_index("Player Name", inplace=True)
+    
+    # Use only numeric stat columns
+    features = df.select_dtypes(include=["float64", "int64"])
+    scaler = StandardScaler()
+    scaled = scaler.fit_transform(features)
+    
+    return df, features.columns, scaled, df.index.tolist()
+
+# Load data
+df, feature_cols, scaled_data, player_list = load_data()
+
+# ---- Streamlit App UI ----
+st.title("MLB Hitter Swing Similarity Tool")
+
+# Player selection
+selected_player = st.selectbox("Select a player:", player_list)
+
+# Slider to choose number of similar players to display
+max_results = min(50, len(player_list) - 1)
+num_results = st.slider("Number of similar players to show:", min_value=1, max_value=max_results, value=10)
+
+if selected_player:
+    idx = player_list.index(selected_player)
+    
+    # Compute similarity scores
+    distances = euclidean_distances([scaled_data[idx]], scaled_data)[0]
+    
+    similarity_df = pd.DataFrame({
+        "Player": player_list,
+        "Similarity Score (Lower = More Similar)": distances
+    })
+
+    # Exclude the selected player from results
+    similarity_df = similarity_df[similarity_df["Player"] != selected_player]
+    
+    # Sort and limit the number of rows shown
+    similarity_df = similarity_df.sort_values(by="Similarity Score (Lower = More Similar)")
+    top_similar = similarity_df.head(num_results).reset_index(drop=True)
+    
+    st.subheader(f"Top {num_results} players similar to **{selected_player}**:")
+    st.dataframe(top_similar)
+
+    # ---- Download button ----
+    csv = top_similar.to_csv(index=False).encode("utf-8")
+    st.download_button(
+        label="📥 Download Similar Players as CSV",
+        data=csv,
+        file_name=f"{selected_player}_similar_players.csv",
+        mime="text/csv"
+    )
+
+    with st.expander("See Selected Player's Stats"):
+        st.dataframe(df.loc[selected_player].to_frame().T)
