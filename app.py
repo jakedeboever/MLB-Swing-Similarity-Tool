@@ -25,7 +25,7 @@ def load_data():
 df, feature_cols, scaled_data, player_list = load_data()
 
 # -------------------- Streamlit UI --------------------
-st.title("⚾ MLB Player Similarity Finder (Weighted)")
+st.title("MLB Swing Similarity Tool")
 
 selected_player = st.selectbox("Select a player:", player_list)
 
@@ -34,11 +34,11 @@ num_results = st.slider("Number of similar players to show:", min_value=1, max_v
 
 # -------------------- Custom hardcoded weights --------------------
 custom_weights = {
-    "avg_swing_speed": 0.75,
-    "attack_direction": 0.75,
+    "avg_swing_speed": 0.7,
+    "attack_direction": 0.6,
     "avg_swing_length": 1.0,
-    "attack_angle": 1.0,
-    "vertical_swing_path": 1.0
+    "attack_angle": 1.1,
+    "vertical_swing_path": 1.1
 }
 
 # Create full weight vector aligned with feature columns
