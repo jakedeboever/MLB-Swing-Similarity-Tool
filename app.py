@@ -35,7 +35,7 @@ st.title("MLB Hitter Swing Similarity Tool")
 selected_player = st.selectbox("Select a player:", player_list)
 
 # Slider to choose number of similar players to display
-max_results = min(50, len(player_list) - 1)
+max_results = min(100, len(player_list) - 1)
 num_results = st.slider("Number of similar players to show:", min_value=1, max_value=max_results, value=10)
 
 if selected_player:
