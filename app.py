@@ -1,7 +1,8 @@
 import streamlit as st
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics.pairwise import euclidean_distances
+from scipy.spatial.distance import mahalanobis
+import numpy as np
 
 @st.cache_data
 def load_data():
@@ -27,7 +28,6 @@ selected_player = st.selectbox("Select a player:", player_list)
 max_results = min(150, len(player_list) - 1)
 num_results = st.slider("Number of similar players to show:", min_value=1, max_value=max_results, value=10)
 
-
 custom_weights = {
     "avg_swing_speed": 0.7,
     "attack_direction": 0.6,
@@ -36,17 +36,24 @@ custom_weights = {
     "vertical_swing_path": 1.1
 }
 
-
 weight_vector = [custom_weights.get(col, 1.0) for col in feature_cols]
-
 
 weighted_data = scaled_data * weight_vector
 
+# --- MAHALANOBIS DISTANCE CHANGES BEGIN HERE ---
+# Calculate covariance matrix and its inverse for Mahalanobis distance
+cov_matrix = np.cov(weighted_data, rowvar=False)
+cov_matrix_inv = np.linalg.inv(cov_matrix)
 
 if selected_player:
     idx = player_list.index(selected_player)
+    selected_vec = weighted_data[idx]
 
-    distances = euclidean_distances([weighted_data[idx]], weighted_data)[0]
+    # Compute Mahalanobis distance from selected player to all others
+    distances = np.array([
+        mahalanobis(selected_vec, weighted_data[i], cov_matrix_inv)
+        for i in range(len(weighted_data))
+    ])
 
     similarity_df = pd.DataFrame({
         "Player": player_list,
@@ -57,10 +64,8 @@ if selected_player:
     similarity_df = similarity_df.sort_values(by="Similarity Score (Lower = More Similar)")
     top_similar = similarity_df.head(num_results).reset_index(drop=True)
 
-
     st.subheader(f"Top {num_results} players similar to **{selected_player}**:")
     st.dataframe(top_similar)
-
 
     csv = top_similar.to_csv(index=False).encode("utf-8")
     st.download_button(
@@ -69,7 +74,6 @@ if selected_player:
         file_name=f"{selected_player}_similar_players.csv",
         mime="text/csv"
     )
-
 
     with st.expander("See Selected Player's Stats"):
         st.dataframe(df.loc[selected_player].to_frame().T)
