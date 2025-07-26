@@ -6,7 +6,7 @@ import numpy as np
 
 @st.cache_data
 def load_data():
-    file_path = "2025-swing-data-2.csv"  
+    file_path = "2025-swing-data-2.csv"
     df = pd.read_csv(file_path)
     df = df.dropna()
 
@@ -40,8 +40,7 @@ weight_vector = [custom_weights.get(col, 1.0) for col in feature_cols]
 
 weighted_data = scaled_data * weight_vector
 
-# --- MAHALANOBIS DISTANCE CHANGES BEGIN HERE ---
-# Calculate covariance matrix and its inverse for Mahalanobis distance
+# Mahalanobis distance: Covariance matrix and its inverse
 cov_matrix = np.cov(weighted_data, rowvar=False)
 cov_matrix_inv = np.linalg.inv(cov_matrix)
 
@@ -49,19 +48,22 @@ if selected_player:
     idx = player_list.index(selected_player)
     selected_vec = weighted_data[idx]
 
-    # Compute Mahalanobis distance from selected player to all others
+    # Compute Mahalanobis distance for all players
     distances = np.array([
         mahalanobis(selected_vec, weighted_data[i], cov_matrix_inv)
         for i in range(len(weighted_data))
     ])
 
+    # Convert distances to similarity score (1 = identical, lower is less similar)
+    similarities = 1 / (1 + distances)
+
     similarity_df = pd.DataFrame({
         "Player": player_list,
-        "Similarity Score (Lower = More Similar)": distances
+        "Similarity Score (Higher = More Similar)": similarities
     })
 
     similarity_df = similarity_df[similarity_df["Player"] != selected_player]
-    similarity_df = similarity_df.sort_values(by="Similarity Score (Lower = More Similar)")
+    similarity_df = similarity_df.sort_values(by="Similarity Score (Higher = More Similar)", ascending=False)
     top_similar = similarity_df.head(num_results).reset_index(drop=True)
 
     st.subheader(f"Top {num_results} players similar to **{selected_player}**:")
