@@ -9,7 +9,7 @@ def load_data():
     df = pd.read_csv(file_path)
     df = df.dropna()
 
-    df.set_index("Player Name", inplace=True)
+    df.set_index("last_name, first_name", inplace=True)
     df = df.drop(columns=[col for col in ["player_id", "year"] if col in df.columns], errors="ignore")
 
     features = df.select_dtypes(include=["float64", "int64"])
