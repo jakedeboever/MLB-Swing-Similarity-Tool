@@ -5,7 +5,7 @@ from sklearn.metrics.pairwise import euclidean_distances
 
 @st.cache_data
 def load_data():
-    file_path = "2025-swing-data.csv"  
+    file_path = "2025-swing-data-2.csv"  
     df = pd.read_csv(file_path)
     df = df.dropna()
 
